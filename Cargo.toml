@@ -1,6 +1,6 @@
 [package]
 name = "dioxus-helmet"
-version = "0.2.4"
+version = "0.3.0"
 authors = ["Saicu"]
 edition = "2021"
 description = "Small Dioxus component which allows you to place elements in the head of your document"
@@ -12,8 +12,8 @@ repository = "https://github.com/saicu/dioxus-helmet"
 doctest = false
 
 [dependencies]
-dioxus = { git = "https://github.com/DioxusLabs/dioxus" }
-web-sys = { version = "0.3.59", features = ["Document", "Window", "Element", "HtmlHeadElement", "HtmlCollection", "NamedNodeMap", "NodeList"] }
-lazy_static = "1.4.0"
-rustc-hash = "1.1.0"
-js-sys = "0.3.59"
+dioxus = "0.3"
+web-sys = { version = "0.3", features = ["Document", "Window", "Element", "HtmlHeadElement", "HtmlCollection", "NamedNodeMap", "NodeList"] }
+lazy_static = "1.4"
+rustc-hash = "1.1"
+js-sys = "0.3"
