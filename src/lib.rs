@@ -59,7 +59,9 @@ lazy_static! {
 
 #[derive(Props)]
 pub struct HelmetProps<'a> {
+    #[props(default = 0)]
     seed: i64,
+    title: Option<String>,
     children: Element<'a>,
 }
 
@@ -73,6 +75,18 @@ pub fn Helmet<'a>(cx: Scope<'a, HelmetProps<'a>>) -> Element {
     let Ok(mut init_cache) = INIT_CACHE.try_lock() else {
         return None;
     };
+
+    if let Some(title) = cx.props.title.as_deref() {
+        if let Some(node) = head.get_elements_by_tag_name("title").get_with_index(0) {
+            node.set_inner_html(title);
+        } else {
+            let node = document.create_element("title").unwrap();
+
+            node.set_inner_html(title);
+
+            head.append_child(&node).unwrap();
+        };
+    }
 
     element_maps.iter().for_each(|element_map| {
         let mut hasher = FxHasher::default();
