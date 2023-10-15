@@ -59,6 +59,7 @@ lazy_static! {
 
 #[derive(Props)]
 pub struct HelmetProps<'a> {
+    seed: i64,
     children: Element<'a>,
 }
 
@@ -69,57 +70,68 @@ pub fn Helmet<'a>(cx: Scope<'a, HelmetProps<'a>>) -> Element {
 
     let element_maps = extract_element_maps(&cx.props.children)?;
 
-    if let Ok(mut init_cache) = INIT_CACHE.try_lock() {
-        element_maps.iter().for_each(|element_map| {
-            let mut hasher = FxHasher::default();
-            element_map.hash(&mut hasher);
-            let hash = hasher.finish();
+    let Ok(mut init_cache) = INIT_CACHE.try_lock() else {
+        return None;
+    };
 
-            if !init_cache.contains(&hash) {
-                init_cache.push(hash);
+    element_maps.iter().for_each(|element_map| {
+        let mut hasher = FxHasher::default();
+        cx.props.seed.hash(&mut hasher);
+        element_map.hash(&mut hasher);
+        let hash = hasher.finish();
 
-                if let Some(new_element) = element_map.try_into_element(&document, &hash) {
-                    let _ = head.append_child(&new_element);
-                }
+        if !init_cache.contains(&hash) {
+            init_cache.push(hash);
+
+            if let Some(new_element) = element_map.try_into_element(&document, &hash) {
+                let _ = head.append_child(&new_element);
             }
-        });
-    }
+        }
+    });
 
     None
 }
 
 impl Drop for HelmetProps<'_> {
     fn drop(&mut self) {
-        if let Some(window) = web_sys::window() {
-            if let Some(document) = window.document() {
-                if let Some(element_maps) = extract_element_maps(&self.children) {
-                    if let Ok(mut init_cache) = INIT_CACHE.try_lock() {
-                        element_maps.iter().for_each(|element_map| {
-                            let mut hasher = FxHasher::default();
-                            element_map.hash(&mut hasher);
-                            let hash = hasher.finish();
+        let Some(window) = web_sys::window() else {
+            return;
+        };
 
-                            if let Some(index) = init_cache.iter().position(|&c| c == hash) {
-                                init_cache.remove(index);
-                            }
+        let Some(document) = window.document() else {
+            return;
+        };
 
-                            if let Ok(children) =
-                                document.query_selector_all(&format!("[data-helmet-id='{hash}']"))
-                            {
-                                if let Ok(Some(children_iter)) = js_sys::try_iter(&children) {
-                                    children_iter.for_each(|child| {
-                                        if let Ok(child) = child {
-                                            let el = web_sys::Element::from(child);
-                                            el.remove();
-                                        };
-                                    });
-                                }
-                            }
-                        });
-                    }
+        let Some(element_maps) = extract_element_maps(&self.children) else {
+            return;
+        };
+
+        let Ok(mut init_cache) = INIT_CACHE.try_lock() else {
+            return;
+        };
+
+        element_maps.iter().for_each(|element_map| {
+            let mut hasher = FxHasher::default();
+            self.seed.hash(&mut hasher);
+            element_map.hash(&mut hasher);
+            let hash = hasher.finish();
+
+            if let Some(index) = init_cache.iter().position(|&c| c == hash) {
+                init_cache.remove(index);
+            }
+
+            if let Ok(children) = document.query_selector_all(&format!("[data-helmet-id='{hash}']"))
+            {
+                if let Ok(Some(children_iter)) = js_sys::try_iter(&children) {
+                    children_iter.for_each(|child| {
+                        if let Ok(child) = child {
+                            let el = web_sys::Element::from(child);
+                            el.remove();
+                        };
+                    });
                 }
             }
-        }
+        });
     }
 }
 
@@ -148,6 +160,11 @@ impl<'a> ElementMap<'a> {
 
             Some(new_element)
         } else {
+            // let key = format!(r#"[data-helmet-id="{hash}"]"#);
+
+            // let element = document.query_selector(&key).unwrap()?;
+
+            // Some(element)
             None
         }
     }
@@ -188,7 +205,7 @@ fn extract_element_maps<'a>(children: &'a Element) -> Option<Vec<ElementMap<'a>>
                     };
 
                     Some(ElementMap {
-                        tag: *tag,
+                        tag,
                         attributes,
                         inner_html,
                     })

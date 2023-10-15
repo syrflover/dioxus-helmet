@@ -12,8 +12,17 @@ repository = "https://github.com/saicu/dioxus-helmet"
 doctest = false
 
 [dependencies]
-dioxus = "0.3"
-web-sys = { version = "0.3", features = ["Document", "Window", "Element", "HtmlHeadElement", "HtmlCollection", "NamedNodeMap", "NodeList"] }
+dioxus = "0.4"
+web-sys = { version = "0.3", features = [
+    "Document",
+    "Window",
+    "Element",
+    "HtmlHeadElement",
+    "HtmlCollection",
+    "NamedNodeMap",
+    "NodeList",
+] }
 lazy_static = "1.4"
 rustc-hash = "1.1"
 js-sys = "0.3"
+log = "0.4.20"
