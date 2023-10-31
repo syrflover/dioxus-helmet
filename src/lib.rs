@@ -70,12 +70,6 @@ pub fn Helmet<'a>(cx: Scope<'a, HelmetProps<'a>>) -> Element {
     let document = web_sys::window()?.document()?;
     let head = document.head()?;
 
-    let element_maps = extract_element_maps(&cx.props.children)?;
-
-    let Ok(mut init_cache) = INIT_CACHE.try_lock() else {
-        return None;
-    };
-
     if let Some(title) = cx.props.title.as_deref() {
         if let Some(node) = head.get_elements_by_tag_name("title").get_with_index(0) {
             node.set_inner_html(title);
@@ -87,6 +81,12 @@ pub fn Helmet<'a>(cx: Scope<'a, HelmetProps<'a>>) -> Element {
             head.append_child(&node).unwrap();
         };
     }
+
+    let element_maps = extract_element_maps(&cx.props.children)?;
+
+    let Ok(mut init_cache) = INIT_CACHE.try_lock() else {
+        return None;
+    };
 
     element_maps.iter().for_each(|element_map| {
         let mut hasher = FxHasher::default();
